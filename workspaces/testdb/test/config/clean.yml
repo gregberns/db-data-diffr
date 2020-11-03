@@ -1,0 +1,39 @@
+tables:
+- name: Logs
+  actions:
+  - name: Clear all values in table
+    type: Truncate
+
+- name: Jobs
+  actions:
+  - name: Remove old records
+    type: Cull
+    values:
+      - name: clause
+        value: date_added < '2020-09-01'
+
+- name: Persons
+  actions:
+  - name: Clear all values in table
+    type: Anon
+    values:
+      # Required
+      - name: anon-server-url
+        value: http://host.docker.internal:3000/api/1.3/
+      # Required
+      - name: input-seed
+        value: PersonId
+      - name: input-nat
+        value: Country
+      - name: input-gender
+        value: Gender
+      - name: anon-FirstName
+        value: FirstName
+      - name: anon-LastName
+        value: LastName
+      - name: anon-Address1
+        value: Address1
+      - name: anon-EmailAddr
+        value: Email
+      - name: anon-PhoneNumber
+        value: Phone

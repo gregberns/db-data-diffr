@@ -1,0 +1,59 @@
+name: testdb
+tables:
+- name: Logs
+  primaryKey: 
+  columns:
+  - name: LogId
+    index: 1
+    type: int
+  - name: message
+    index: 2
+    type: varchar
+  - name: date_added
+    index: 3
+    type: varchar
+- name: Persons
+  primaryKey: PersonId
+  columns:
+  - name: PersonId
+    index: 1
+    type: int
+  - name: LastName
+    index: 2
+    type: varchar
+  - name: FirstName
+    index: 3
+    type: varchar
+  - name: Address1
+    index: 4
+    type: varchar
+  - name: City
+    index: 5
+    type: varchar
+  - name: Country
+    index: 6
+    type: varchar
+  - name: EmailAddr
+    index: 7
+    type: varchar
+  - name: PhoneNumber
+    index: 8
+    type: varchar
+  - name: Gender
+    index: 9
+    type: varchar
+- name: Jobs
+  primaryKey: JobId
+  columns:
+  - name: JobId
+    index: 1
+    type: int
+  - name: name
+    index: 2
+    type: varchar
+  - name: salary
+    index: 3
+    type: int
+  - name: date_added
+    index: 4
+    type: datetime

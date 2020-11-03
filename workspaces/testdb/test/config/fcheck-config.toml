@@ -1,0 +1,105 @@
+version = "3"
+
+[[setup]]
+command = "rm -rf /actual/*; mkdir /actual/init"
+[[setup]]
+name = "Reset the database"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -U sa -P Pass@word -i /sql-scripts/init.sql"
+
+[[setup]]
+name = "Assert table is formatted correctly: Logs"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Logs' > /actual/init/Logs.txt"
+[[setup]]
+command = "wdiff --no-common /expected/init/logs.txt /actual/init/logs.txt"
+
+[[setup]]
+name = "Assert table is formatted correctly: Persons"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Persons' > /actual/init/Persons.txt"
+[[setup]]
+command = "wdiff --no-common /expected/init/Persons.txt /actual/init/Persons.txt"
+
+[[setup]]
+name = "Assert table is formatted correctly: Jobs"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Jobs' > /actual/init/Jobs.txt"
+[[setup]]
+command = "wdiff --no-common /expected/init/Jobs.txt /actual/init/Jobs.txt"
+
+
+[[test]]
+name = "Schema"
+[[test.command]]
+command = "./db-data-diffr schema -w /config"
+[[test.command]]
+command = "cp /config/schema.yml /actual/ && wdiff --no-common /expected/schema.yml /actual/schema.yml"
+
+
+[[test]]
+name = "Snapshot + Diff"
+[[test.command]]
+name = "Take first snapshot"
+command = "./db-data-diffr snapshot -n 00 -w /config"
+[[test.command]]
+name = "Check the first snapshot is good"
+command = "wdiff --no-common /expected/snapshots/00/Jobs.csv /config/snapshots/00/Jobs.csv"
+[[test.command]]
+command = "wdiff --no-common /expected/snapshots/00/Logs.csv /config/snapshots/00/Logs.csv"
+[[test.command]]
+command = "wdiff --no-common /expected/snapshots/00/Persons.csv /config/snapshots/00/Persons.csv"
+[[test.command]]
+name = "Modify database - Insert"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'INSERT INTO Logs (message, date_added) VALUES (\"Invalid User\" ,\"2020-10-31\")'"
+[[test.command]]
+name = "Modify database - Update"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'UPDATE Jobs SET Salary = 88 WHERE name = \"Police officer\" '"
+[[test.command]]
+name = "Modify database - Delete"
+command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'DELETE FROM Persons WHERE LastName = \"Berns\" '"
+[[test.command]]
+name = "Take second Snapshot"
+command = "./db-data-diffr snapshot -n 01 -w /config"
+[[test.command]]
+name = "Check the second snapshot is good"
+command = "wdiff --no-common /expected/snapshots/01/Jobs.csv /config/snapshots/01/Jobs.csv"
+[[test.command]]
+command = "wdiff --no-common /expected/snapshots/01/Logs.csv /config/snapshots/01/Logs.csv"
+[[test.command]]
+command = "wdiff --no-common /expected/snapshots/01/Persons.csv /config/snapshots/01/Persons.csv"
+[[test.command]]
+name = "Run Diff"
+command = "./db-data-diffr diff -n d01 -s 00 -e 01 -w /config"
+# [[test.command]]
+# command = "wdiff --no-common /expected/snapshots/01/Persons.csv /config/snapshots/01/Persons.csv"
+
+
+
+# [[test]]
+# name = "Clean - Truncate"
+# [[test.command]]
+# command = "./db-data-diffr clean -w /config"
+# [[test.command]]
+# command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Logs' > /actual/Truncate-Logs.txt"
+# [[test.command]]
+# command = "wdiff --no-common /expected/Truncate-Logs.txt /actual/Truncate-Logs.txt"
+
+# [[test.command]]
+# command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Jobs' > /actual/Cull-Jobs.txt"
+# [[test.command]]
+# command = "wdiff --no-common /expected/Cull-Jobs.txt /actual/Cull-Jobs.txt"
+
+# [[test.command]]
+# command = "/opt/mssql-tools/bin/sqlcmd -S db -d testdb -U sa -P Pass@word -Q 'SELECT * FROM Persons' > /actual/Anon-Persons.txt"
+# [[test.command]]
+# command = "wdiff --no-common /expected/Anon-Persons.txt /actual/Anon-Persons.txt"
+
+
+# [[test]]
+# name = "Test 2"
+# [[test.command]]
+# name = "Print message to file"
+# command = "echo cats > /actual/cats.txt"
+# [[test.command]]
+# name = "Validate contents of file"
+# command = "wdiff /expected/cats.txt /actual/cats.txt"
+
+[[teardown]]
+command = "echo Finished"
