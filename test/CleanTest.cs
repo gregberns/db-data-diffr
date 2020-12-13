@@ -32,5 +32,16 @@ namespace test
 
             Assert.Equal("?seed=1234&nat=us&gender=male", url);
         }
+
+        [Fact]
+        public void CreateAnonPerson()
+        {
+            var fun = Clean.CreateAnonPerson();
+            var person = fun("1");
+
+            Assert.Equal("Justin", person.FirstName);
+            Assert.Equal("Konopelski", person.LastName);
+            Assert.Equal("Justin.Konopelski64@yahoo.com", person.Email);
+        }
     }
 }

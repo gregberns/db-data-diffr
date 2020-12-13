@@ -66,7 +66,7 @@ namespace DbDataDiffr
         {
             var errs = snaps
                 .Map((tup) => ($"./diffs/{diffName}/{tup.Item1}", DiffInputStream(tup.Item2, tup.Item3, tup.Item4)))
-                .Map(d => WriteDiffBase(d.Item1, d.Item2))
+                .Map(d => d.Item2.Count() > 0 ? WriteDiffBase(d.Item1, SerializeDiffBase(d.Item2)) : Right(unit))
                 .Lefts()
                 .ToList();
 
@@ -115,45 +115,54 @@ namespace DbDataDiffr
                 })
                 .Sequence();
 
-        public static Either<Error, Unit> WriteDiffBase(string diffPath, IEnumerable<DiffBase> diffs)
-        {
-            var str = new StringBuilder();
-            diffs.ToList()
-                .ForEach(v =>
-                {
-                    var k = v.Key;
-                    var t = v.Type;
-
-                    str.AppendLine($"==========");
-                    str.AppendLine($"Key: {k}");
-                    str.AppendLine($"Type: {t}");
-
-                    if (t == "Update")
+        public static string SerializeDiffBase(IEnumerable<DiffBase> diffs) =>
+            Common.SerializeToYaml(diffs)
+                .Match(
+                    Right: s => s,
+                    Left: e =>
                     {
-                        var d = ((DiffUpdate)v).Columns;
-                        str.AppendLine($"Values: {SerializeDict(d)}");
+                        throw new Exception($"SerializeDiffBase failed. Error: {e.Message}");
                     }
-                    else if (t == "Insert")
-                    {
-                        var d = ((DiffInsert)v).Columns;
-                        str.AppendLine($"Values: {SerializeDict(d)}");
-                    }
-                    else
-                    {
-                        var d = ((DiffDelete)v).Columns;
-                        str.AppendLine($"Values: {SerializeDict(d)}");
-                    }
-                });
+                );
+        // diffs
+        //     .Aggregate(new StringBuilder(), (str, v) =>
+        //     {
+        //         var k = v.Key;
+        //         var t = v.Type;
 
-            return Try(() =>
+        //         str.AppendLine($"==========");
+        //         str.AppendLine($"Key: {k}");
+        //         str.AppendLine($"Type: {t}");
+
+        //         if (t == "Update")
+        //         {
+        //             var d = ((DiffUpdate)v).Columns;
+        //             str.AppendLine($"Values: {SerializeDict(d)}");
+        //         }
+        //         else if (t == "Insert")
+        //         {
+        //             var d = ((DiffInsert)v).Columns;
+        //             str.AppendLine($"Values: {SerializeDict(d)}");
+        //         }
+        //         else
+        //         {
+        //             var d = ((DiffDelete)v).Columns;
+        //             str.AppendLine($"Values: {SerializeDict(d)}");
+        //         }
+        //         return str;
+        //     })
+        //     .ToString();
+
+        public static Either<Error, Unit> WriteDiffBase(string diffPath, string diffs) =>
+             Try(() =>
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(diffPath));
-                File.WriteAllText(diffPath, str.ToString());
+                if (!string.IsNullOrWhiteSpace(diffs))
+                    File.WriteAllText(diffPath, diffs);
                 return unit;
             })
             .ToEither()
             .MapLeft(e => Error.New($"Failed to write diff to: {diffPath}", e));
-        }
 
         public static IEnumerable<DiffBase> DiffInputStream(string primaryKey, string filepath1, string filepath2)
         {
@@ -195,7 +204,8 @@ namespace DbDataDiffr
 
                             int ii = 0;
 
-                            while (ii < 10)
+                            //while (ii < 10)
+                            while (true)
                             {
                                 // Console.WriteLine($"aNext {aNext} {ea.Current} && bNext {bNext} {ea.Current}");
                                 if (!aNext && !bNext)
@@ -215,27 +225,34 @@ namespace DbDataDiffr
                                 //      4   4
                                 //          5  If A > B - ADD
                                 //      6   6
-                                int comp = a.CompareTo(b);
+                                int comp = 0;
                                 if (!aNext)
                                 {
                                     comp = 1;
                                 }
-                                if (!bNext)
+                                else if (!bNext)
                                 {
                                     comp = -1;
+                                }
+                                else
+                                {
+                                    comp = a.CompareTo(b);
                                 }
 
                                 // Console.WriteLine($"a: {a}, b: {b}, comp: {comp}");
                                 if (comp == 0)
                                 {
                                     // Console.WriteLine($"A/B Diff: {SerializeDict(DiffDicts(aa, bb))}");
-                                    // var cc = DiffDicts(aa, bb);
-                                    yield return new DiffUpdate
+                                    var diff = DiffDicts(aa, bb);
+                                    if (diff.Count() > 0)
                                     {
-                                        Key = a,
-                                        Type = "Update",
-                                        Columns = DiffDicts(aa, bb)
-                                    };
+                                        yield return new DiffUpdate
+                                        {
+                                            Key = a,
+                                            Type = "Update",
+                                            Columns = diff
+                                        };
+                                    }
 
                                     aNext = ea.MoveNext();
                                     var (a11, a22) = ea.Current;

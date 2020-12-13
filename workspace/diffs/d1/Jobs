@@ -1,0 +1,8 @@
+==========
+Key: 1
+Type: Insert
+Values: { {'JobId': '1'}, {'name': 'Fire fighter'}, {'salary': '80'}, {'date_added': '10/01/2020 00:00:00'} }
+==========
+Key: 2
+Type: Insert
+Values: { {'JobId': '2'}, {'name': 'Police officer'}, {'salary': '88'}, {'date_added': '08/01/2020 00:00:00'} }

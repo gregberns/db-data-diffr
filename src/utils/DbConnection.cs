@@ -77,9 +77,6 @@ namespace DbDataDiffr
                 {
                     try
                     {
-                        // Log.LogDebug($"ConnStateQ1 {c.State} - {query}");
-                        // c.Open();
-                        // Log.LogDebug($"ConnStateQ2 {c.State} - {query}");
                         return Right<Error, IEnumerable<T>>(await c.QueryAsync<T>(query));
                     }
                     catch (Exception e)
@@ -104,7 +101,6 @@ namespace DbDataDiffr
                     },
                 conn => TryAsync(async () =>
                 {
-                    conn.Open();
                     return await conn.QueryAsync<T>(query, param);
                 }).ToEither());
 

@@ -30,6 +30,7 @@ INSERT INTO Logs
 VALUES
     ("Database failed" ,"2020-09-20")
     ,("Application fault" ,"2020-09-21")
+    ,('Something "very bad" happend' ,"2020-09-21")
 
 -- ==========================================
 IF NOT EXISTS (SELECT *

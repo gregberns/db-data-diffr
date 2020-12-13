@@ -1,0 +1,4 @@
+==========
+Key: 1
+Type: Delete
+Values: { {'PersonId': '1'}, {'LastName': 'Berns'}, {'FirstName': 'Greg'}, {'Address1': '123 Main'}, {'City': 'Mesa'}, {'Country': 'United States'}, {'EmailAddr': 'gb@email.com'}, {'PhoneNumber': '738-348-2032'}, {'Gender': 'male'} }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using LanguageExt;
 using LanguageExt.Common;
 using static LanguageExt.Prelude;
+using Bogus;
 
 namespace DbDataDiffr
 {
@@ -163,8 +164,6 @@ namespace DbDataDiffr
             client.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
             client.BaseAddress = new Uri(serviceEndpoint);
             client.Timeout.Add(new TimeSpan(0, 10, 0));
-            var threadCount = 2;
-            var _throttler = new SemaphoreSlim(threadCount, threadCount);
 
             /// Identity Properties
             /// Look for keys starting with `input-`, used to query table for data to use to anonymize data, such as nationality, gender, etc.
@@ -214,58 +213,42 @@ namespace DbDataDiffr
                 })
                 .Bind(rows =>
                 {
+                    var CreatePersonFunc = CreateAnonPerson();
                     Log.LogDebug($"Anon - Initial SQL returned. Count {rows.Count()}");
-                    var people = rows.Map(async row =>
-                    {
-                        var returnedColumns = row as IDictionary<string, object>;
-                        var seed = returnedColumns["seed"];
+                    var people = rows.Map(row =>
+                   {
+                       var returnedColumns = row as IDictionary<string, object>;
+                       var seed = returnedColumns["seed"] == null ? "" : returnedColumns["seed"].ToString();
+                       var person = CreatePersonFunc(seed);
 
-                        Log.LogDebug($"COLUMNS RETURNED: {string.Join(", ", returnedColumns.Keys)}");
+                       //    Log.LogDebug($"COLUMNS RETURNED: {string.Join(", ", returnedColumns.Keys)}");
 
-                        var requestUri = BuildAnonUrl(returnedColumns);
+                       var personDict = person.ToDictionary();
+                       var setClause = string.Join(", ", colsToAnon
+                           .Map(c =>
+                           {
+                               var value = personDict[c.AnonValue]
+                                    .Replace("'", "''");
+                               return $"{c.ColumnName} = '{value}'";
+                           }));
 
-                        Log.LogDebug($"Anon - Initial SQL result: Seed: {seed}, ANON_URL: {requestUri}");
+                       var sql = $"UPDATE {tableName} SET {setClause} WHERE {seedColumn} = {seed}";
 
-                        await _throttler.WaitAsync().ConfigureAwait(false);
+                       //    Log.LogDebug($"Anon - Start UPDATE. Seed: {person.Seed}, Sql: '{sql}'");
 
-                        return await Common.HttpGet<AnonResults>(client, requestUri)
-                            .MapLeft(e =>
-                            {
-                                _throttler.Release();
-                                Log.LogError($"HttpRequest Failed. Seed: {seed}, Message: {e.Message}");
-                                return e;
-                            })
-                            .Map(res =>
-                            {
-                                _throttler.Release();
-                                Console.WriteLine($"PHONE_PHONE_PHONE: {res.results[0].phone}");
-                                var a = AnonResultsToPerson(res);
-                                return a;
-                            })
-                            .Bind(person =>
-                            {
-                                var personDict = person.ToDictionary();
-                                var setClause = string.Join(", ", colsToAnon
-                                    .Map(c => $"{c.ColumnName} = '{personDict[c.AnonValue]}'"));
-
-                                var sql = $"UPDATE {tableName} SET {setClause} WHERE {seedColumn} = {seed}";
-
-                                Log.LogDebug($"Anon - Start UPDATE. Seed: {person.Seed}, Sql: '{sql}'");
-
-                                return Connection.ExecuteAsync(dbConnection, sql).ToAsync()
-                                    .MapLeft(e =>
-                                    {
-                                        Log.LogError($"ExecuteAsync Failed. Seed: {seed}, Message: {e.Message}");
-                                        return e;
-                                    })
-                                    .Bind<Unit>(i =>
-                                    {
-                                        Log.LogDebug($"Anon - UpdateAnon Complete. Result: {i}, Sql: '{sql}'");
-                                        return RightAsync<Error, Unit>(unit);
-                                    });
-                            })
-                            .ToEither();
-                    });
+                       return Connection.ExecuteAsync(dbConnection, sql).ToAsync()
+                           .MapLeft(e =>
+                           {
+                               Log.LogError($"ExecuteAsync Failed. Seed: {seed}, Message: {e.Message}, SQL: {sql}");
+                               return e;
+                           })
+                           .Bind<Unit>(i =>
+                           {
+                               //    Log.LogDebug($"Anon - UpdateAnon Complete. Result: {i}, Sql: '{sql}'");
+                               return RightAsync<Error, Unit>(unit);
+                           })
+                           .ToEither();
+                   });
 
                     return Task.WhenAll(people)
                         .Map(e => e.AsEnumerable().Lefts())
@@ -278,6 +261,49 @@ namespace DbDataDiffr
                         }).ToAsync();
                 });
         }
+
+        public static Func<string, AnonPerson> CreateAnonPerson()
+        {
+            var faker = new Faker<AnonPerson>()
+                .StrictMode(false)
+                .Rules((f, ap) =>
+                    {
+                        var p = f.Person;
+                        ap.FirstName = p.FirstName;
+                        ap.LastName = p.LastName;
+                        ap.Address1 = p.Address.Street;
+                        ap.Email = p.Email;
+                        ap.Phone = p.Phone;
+                        ap.Cell = p.Phone;
+                        ap.DateOfBirth = p.DateOfBirth.ToString("yyyy-MM-dd");
+                        // ap.Age = p.dob.age;
+                        // ap.Seed = f.;
+                    });
+
+            return seed =>
+            {
+                int iseed = ForceStringToInt(seed);
+                var person = faker.UseSeed(iseed).Generate();
+                person.Seed = seed;
+                return person;
+            };
+        }
+
+        public static int ForceStringToInt(string s)
+        {
+            var result = 0;
+            if (Int32.TryParse(s, out result))
+            {
+                return result;
+            }
+            else
+            {
+                System.Security.Cryptography.MD5 md5Hasher = System.Security.Cryptography.MD5.Create();
+                var hashed = md5Hasher.ComputeHash(System.Text.Encoding.UTF8.GetBytes(s));
+                return BitConverter.ToInt32(hashed, 0);
+            }
+        }
+
         // public static EitherAsync<Error, AnonResults> GetAnon(HttpClient client, IDictionary<string, object> r)
         // {
         //     var s = r["seed"];

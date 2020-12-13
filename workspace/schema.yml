@@ -57,3 +57,357 @@ tables:
   - name: date_added
     index: 4
     type: datetime
+- name: store_products
+  primaryKey: product_id
+  columns:
+  - name: product_id
+    index: 1
+    type: decimal
+  - name: productCategory_id
+    index: 2
+    type: decimal
+  - name: title
+    index: 3
+    type: nvarchar
+  - name: course_catalog_title
+    index: 4
+    type: nvarchar
+  - name: abbr
+    index: 5
+    type: nvarchar
+  - name: courseNumber
+    index: 6
+    type: nvarchar
+  - name: prerequisite
+    index: 7
+    type: nvarchar
+  - name: price
+    index: 8
+    type: float
+  - name: course_category
+    index: 9
+    type: nvarchar
+  - name: purchase_AccessLevel
+    index: 10
+    type: numeric
+  - name: listOrder
+    index: 11
+    type: decimal
+  - name: requiresShipping
+    index: 12
+    type: bit
+  - name: ceuCredits
+    index: 13
+    type: decimal
+  - name: credits
+    index: 14
+    type: float
+  - name: ces_session
+    index: 15
+    type: nvarchar
+  - name: course_length
+    index: 16
+    type: nvarchar
+  - name: course_url
+    index: 17
+    type: nvarchar
+  - name: exam_url
+    index: 18
+    type: nvarchar
+  - name: issaonline_url
+    index: 19
+    type: varchar
+  - name: description
+    index: 20
+    type: ntext
+  - name: package_weight
+    index: 21
+    type: float
+  - name: package_length
+    index: 22
+    type: float
+  - name: package_width
+    index: 23
+    type: float
+  - name: package_height
+    index: 24
+    type: float
+  - name: taxable
+    index: 25
+    type: bit
+  - name: date_added
+    index: 26
+    type: datetime
+  - name: date_modified
+    index: 27
+    type: datetime
+  - name: image_url
+    index: 28
+    type: nvarchar
+  - name: video_url
+    index: 29
+    type: nvarchar
+  - name: author_id
+    index: 30
+    type: numeric
+  - name: version
+    index: 31
+    type: int
+  - name: list_price
+    index: 32
+    type: numeric
+  - name: cost_of_goods
+    index: 33
+    type: money
+  - name: is_bundle
+    index: 34
+    type: bit
+  - name: shipping
+    index: 35
+    type: money
+  - name: nickname
+    index: 36
+    type: varchar
+  - name: nccpt_product_id
+    index: 37
+    type: int
+  - name: nccpt_product_id_alt
+    index: 38
+    type: int
+- name: blog_authors
+  primaryKey: author_id
+  columns:
+  - name: author_id
+    index: 1
+    type: numeric
+  - name: author_name
+    index: 2
+    type: varchar
+  - name: author_image
+    index: 3
+    type: varchar
+  - name: author_bio
+    index: 4
+    type: varchar
+  - name: date_added
+    index: 5
+    type: datetime
+  - name: date_modified
+    index: 6
+    type: datetime
+- name: filemaker_rolodex
+  primaryKey: rolodex_id
+  columns:
+  - name: rolodex_id
+    index: 1
+    type: numeric
+  - name: ro_first_name
+    index: 2
+    type: varchar
+  - name: ro_middle_name
+    index: 3
+    type: varchar
+  - name: ro_last_name
+    index: 4
+    type: varchar
+  - name: ro_email
+    index: 5
+    type: varchar
+  - name: ro_address
+    index: 6
+    type: varchar
+  - name: ro_address_apt
+    index: 7
+    type: varchar
+  - name: ro_city
+    index: 8
+    type: varchar
+  - name: ro_state
+    index: 9
+    type: varchar
+  - name: ro_zip
+    index: 10
+    type: varchar
+  - name: ro_country
+    index: 11
+    type: varchar
+  - name: ro_cell_phone
+    index: 12
+    type: varchar
+  - name: ro_home_phone
+    index: 13
+    type: varchar
+  - name: ro_work_phone
+    index: 14
+    type: varchar
+  - name: ro_company
+    index: 15
+    type: varchar
+  - name: ro_gender
+    index: 16
+    type: varchar
+  - name: ro_fax
+    index: 17
+    type: varchar
+  - name: ro_notes
+    index: 18
+    type: varchar
+  - name: ro_inmate_number
+    index: 19
+    type: varchar
+  - name: ro_password
+    index: 20
+    type: varchar
+  - name: DOB
+    index: 21
+    type: smalldatetime
+  - name: certificate_name
+    index: 22
+    type: varchar
+  - name: xxx_hyperstrike_agreement
+    index: 23
+    type: bit
+  - name: date_added
+    index: 24
+    type: datetime
+  - name: date_modified
+    index: 25
+    type: datetime
+  - name: date_last_login
+    index: 26
+    type: datetime
+  - name: date_awp_signup
+    index: 27
+    type: datetime
+  - name: locked
+    index: 28
+    type: bit
+  - name: is_virtual_rep_transfer
+    index: 29
+    type: bit
+  - name: comcourse_userid
+    index: 30
+    type: int
+  - name: military_affiliation
+    index: 31
+    type: varchar
+  - name: is_high_school_graduate
+    index: 32
+    type: bit
+  - name: is_student
+    index: 33
+    type: bit
+  - name: is_ces_applicant
+    index: 34
+    type: bit
+  - name: is_lead
+    index: 35
+    type: bit
+  - name: in_call_back_date
+    index: 36
+    type: datetime
+  - name: in_program
+    index: 37
+    type: nvarchar
+  - name: in_notes
+    index: 38
+    type: varchar
+  - name: in_rep_lead_id
+    index: 39
+    type: decimal
+  - name: in_rolodex_id
+    index: 40
+    type: decimal
+  - name: in_hot_lead
+    index: 41
+    type: nvarchar
+  - name: in_best_time_to_call
+    index: 42
+    type: nvarchar
+  - name: in_internation_address
+    index: 43
+    type: nvarchar
+  - name: in_color_code
+    index: 44
+    type: nvarchar
+  - name: pardot_prospect_id
+    index: 45
+    type: numeric
+  - name: is_do_not_call
+    index: 46
+    type: bit
+  - name: primary_prospect_id
+    index: 47
+    type: numeric
+  - name: is_archived
+    index: 48
+    type: bit
+  - name: ro_cell_phone_clean
+    index: 49
+    type: varchar
+  - name: ro_home_phone_clean
+    index: 50
+    type: varchar
+  - name: ro_work_phone_clean
+    index: 51
+    type: varchar
+  - name: refer_a_friend
+    index: 52
+    type: varchar
+  - name: is_deleted
+    index: 53
+    type: bit
+  - name: reinquire_needs_review
+    index: 54
+    type: bit
+  - name: is_manual_pardot
+    index: 55
+    type: bit
+  - name: is_unsubscribe
+    index: 56
+    type: bit
+  - name: is_invalid_email
+    index: 57
+    type: bit
+  - name: date_membership_start
+    index: 58
+    type: date
+  - name: date_latest_membership_renewal
+    index: 59
+    type: date
+  - name: date_membership_expiration
+    index: 60
+    type: date
+  - name: populi_id
+    index: 61
+    type: numeric
+  - name: date_code_of_conduct_signed
+    index: 62
+    type: datetime
+  - name: password_salt
+    index: 63
+    type: nvarchar
+  - name: password_hash
+    index: 64
+    type: nvarchar
+  - name: enable_text_messages
+    index: 65
+    type: bit
+  - name: intercom_user_id
+    index: 66
+    type: varchar
+  - name: comcourse_vocational_user_id
+    index: 67
+    type: int
+  - name: company_id
+    index: 68
+    type: numeric
+  - name: is_in_phone_dialer
+    index: 69
+    type: bit
+  - name: student_representative_employee_id
+    index: 70
+    type: numeric
+  - name: nccpt_member_id
+    index: 71
+    type: numeric
