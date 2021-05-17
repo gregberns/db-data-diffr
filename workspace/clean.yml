@@ -1,0 +1,38 @@
+tables:
+
+- name: some_table_name
+  actions:
+  - name: Anonymize data
+    type: Anon
+    values:
+      - name: anon-server-url
+        value: http://host.docker.internal:3000/api/1.3/
+      - name: input-seed
+        value: rolodex_id
+      - name: anon-ro_first_name
+        value: FirstName
+      - name: anon-ro_last_name
+        value: LastName
+      - name: anon-ro_address
+        value: Address1
+      # - name: anon-ro_address_apt
+      #   value: Address1
+      - name: input-nat
+        value: ro_country
+      - name: anon-ro_email
+        value: Email
+      - name: anon-DOB
+        value: DateOfBirth
+      - name: anon-ro_fax
+        value: Phone
+      - name: anon-ro_cell_phone
+        value: Phone
+      - name: anon-ro_home_phone
+        value: Phone
+      - name: anon-ro_work_phone
+        value: Phone
+      - name: anon-ro_cell_phone_clean
+        value: Phone
+      - name: anon-ro_home_phone_clean
+        value: Phone
+      - name: anon-ro_work_phone_clean

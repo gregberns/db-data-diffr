@@ -158,13 +158,6 @@ namespace DbDataDiffr
 
         public static EitherAsync<Error, Unit> AnonomizeAction(Connection dbConnection, string tableName, Dictionary<string, string> values)
         {
-            var serviceEndpoint = values["anon-server-url"];
-
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-            client.BaseAddress = new Uri(serviceEndpoint);
-            client.Timeout.Add(new TimeSpan(0, 10, 0));
-
             /// Identity Properties
             /// Look for keys starting with `input-`, used to query table for data to use to anonymize data, such as nationality, gender, etc.
             ///  - Seed (required): Usually the primary key of the table. Used to generate a unique user. If seed is stable, identity output will be stable.
@@ -174,7 +167,7 @@ namespace DbDataDiffr
             var seedColumn = values["input-seed"];
             var projectClause = string.Join(", ", values.Keys
                 .Where(k => k.ToLower().StartsWith("input-"))
-                .Select(k =>
+                .Map(k =>
                 {
                     //Like seed, gender, etc
                     var propertyName = k.Substring("input-".Length());
@@ -188,24 +181,28 @@ namespace DbDataDiffr
             ///  Those key will be the db column name (since its unique)
             ///   The Value will be the Anon Key name
 
-            List<AnonColumn> colsToAnon = values.Keys
+            Either<Error, IEnumerable<AnonColumn>> colsToAnon = values.Keys
                 .Where(k => k.ToLower().StartsWith("anon-"))
-                .Where(k => k != "anon-server-url")
-                .Select(k =>
+                .Map(k =>
                 {
                     var columnName = k.Substring("anon-".Length());
                     var anonValue = values[k];
-                    return new AnonColumn()
-                    {
-                        ColumnName = columnName,
-                        AnonValue = anonValue
-                    };
+                    return anonValue == null
+                        ? Left<Error, AnonColumn>(Error.New($"Clean.yml parse error: Value named '{k}' has a 'value' of null."))
+                        : Right<Error, AnonColumn>(new AnonColumn()
+                        {
+                            ColumnName = columnName,
+                            AnonValue = anonValue
+                        });
                 })
-                .ToList();
+                .Sequence();
 
             Log.LogDebug($"Anon - Initial SQL: '{initSql}', SeedColumn: {seedColumn}");
 
-            return Connection.QueryAsync2<dynamic>(dbConnection, initSql, new { }).ToAsync()
+            return
+
+                    Connection.QueryAsync2<dynamic>(dbConnection, initSql, new { }).ToAsync()
+
                 .MapLeft(e =>
                 {
                     Log.LogError($"QueryAsync Failed. Sql: {initSql}, Message: {e.Message}");
@@ -216,39 +213,40 @@ namespace DbDataDiffr
                     var CreatePersonFunc = CreateAnonPerson();
                     Log.LogDebug($"Anon - Initial SQL returned. Count {rows.Count()}");
                     var people = rows.Map(row =>
-                   {
-                       var returnedColumns = row as IDictionary<string, object>;
-                       var seed = returnedColumns["seed"] == null ? "" : returnedColumns["seed"].ToString();
-                       var person = CreatePersonFunc(seed);
+                    {
+                        var returnedColumns = row as IDictionary<string, object>;
+                        var seed = returnedColumns["seed"] == null ? "" : returnedColumns["seed"].ToString();
+                        var person = CreatePersonFunc(seed);
 
-                       //    Log.LogDebug($"COLUMNS RETURNED: {string.Join(", ", returnedColumns.Keys)}");
+                        //    Log.LogDebug($"COLUMNS RETURNED: {string.Join(", ", returnedColumns.Keys)}");
 
-                       var personDict = person.ToDictionary();
-                       var setClause = string.Join(", ", colsToAnon
-                           .Map(c =>
-                           {
-                               var value = personDict[c.AnonValue]
-                                    .Replace("'", "''");
-                               return $"{c.ColumnName} = '{value}'";
-                           }));
+                        var personDict = person.ToDictionary();
+                        var setClause = string.Join(", ", colsToAnon
+                            .Map(c =>
+                            {
+                                Log.LogInformation($"SetClause: {c.ColumnName} AnonValue: {c.AnonValue}");
+                                var value = personDict[c.AnonValue]
+                                        .Replace("'", "''");
+                                return $"{c.ColumnName} = '{value}'";
+                            }));
 
-                       var sql = $"UPDATE {tableName} SET {setClause} WHERE {seedColumn} = {seed}";
+                        var sql = $"UPDATE {tableName} SET {setClause} WHERE {seedColumn} = {seed}";
 
-                       //    Log.LogDebug($"Anon - Start UPDATE. Seed: {person.Seed}, Sql: '{sql}'");
+                        //    Log.LogDebug($"Anon - Start UPDATE. Seed: {person.Seed}, Sql: '{sql}'");
 
-                       return Connection.ExecuteAsync(dbConnection, sql).ToAsync()
-                           .MapLeft(e =>
-                           {
-                               Log.LogError($"ExecuteAsync Failed. Seed: {seed}, Message: {e.Message}, SQL: {sql}");
-                               return e;
-                           })
-                           .Bind<Unit>(i =>
-                           {
-                               //    Log.LogDebug($"Anon - UpdateAnon Complete. Result: {i}, Sql: '{sql}'");
-                               return RightAsync<Error, Unit>(unit);
-                           })
-                           .ToEither();
-                   });
+                        return Connection.ExecuteAsync(dbConnection, sql).ToAsync()
+                            .MapLeft(e =>
+                            {
+                                Log.LogError($"ExecuteAsync Failed. Seed: {seed}, Message: {e.Message}, SQL: {sql}");
+                                return e;
+                            })
+                            .Bind<Unit>(i =>
+                            {
+                                //    Log.LogDebug($"Anon - UpdateAnon Complete. Result: {i}, Sql: '{sql}'");
+                                return RightAsync<Error, Unit>(unit);
+                            })
+                            .ToEither();
+                    });
 
                     return Task.WhenAll(people)
                         .Map(e => e.AsEnumerable().Lefts())
